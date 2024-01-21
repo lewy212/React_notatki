@@ -3,51 +3,121 @@ import {Button, Table} from 'react-bootstrap'
 import Note from "./Note";
 import 'react-confirm-alert/src/react-confirm-alert.css';
 import { confirmAlert } from 'react-confirm-alert';
-
-
+import NoteClass from "./class/NoteClass";
+import { NotificationContainer, NotificationManager } from 'react-notifications';
+import AddNote from "./AddNote";
+import EditForm from "./forms/EditForm";
+import DeleteForm from "./forms/DeleteForm";
+import DetailForm from "./forms/DetailForm";
+import ChangeNoteStatusForm from "./forms/ChangeNoteStatusForm";
+import RemindForm from "./forms/RemindForm";
 class Notes extends Component{
     constructor(props) {
         super(props);
-        this.state={
-            noteList :[
-                {
-                    title:"Meeting",
-                    category: "Work",
-                    content: "Meet with John in restaurant Bistro",
-                    date: '',
-                    status: undefined,
-                    time: ''
-                },
-                {
-                    title:"Test score",
-                    category: "Study",
-                    content: "25/30 points on practical part",
-                    date: '',
-                    status: undefined,
-                    time: ''
-                },
-                {
-                    title: "Go to the gym",
-                    category:"Hobby",
-                    content:"Leg day",
-                    date: '',
-                    status: false,
-                    time: ''
-                },
-                {
-                    title: "Go to the gym",
-                    category:"Hobby",
-                    content:"Chest day",
-                    date: new Date("2020-07-07")
-                }
-            ],
-            title: '',
-            category: '',
-            content: '',
-            date: undefined,
-            time: undefined,
-        }
+        this.state = {
+            noteList: [
+                new NoteClass(1, "Meeting", "Work", "Meet with John in restaurant Bistro", "", null, ""),
+                new NoteClass(2, "Test score", "Study", "25/30 points on practical part", "", null, ""),
+                new NoteClass(3, "Go to the gym", "To do", "Leg day", true, "2020-11-11", "11:30")
+            ]
+        };
+
+        this.showDetailForm=this.showDetailForm.bind(this);
+        this.showEditForm = this.showEditForm.bind(this);
+        this.showDeleteForm = this.showDeleteForm.bind(this);
+        this.showChangeNoteStatusForm = this.showChangeNoteStatusForm.bind(this);
+        this.showRemindForm = this.showRemindForm.bind(this);
+        this.addNote = this.addNote.bind(this);
+        this.editNote = this.editNote.bind(this);
+        this.deleteNote = this.deleteNote.bind(this);
+        this.changeNoteStatus = this.changeNoteStatus.bind(this);
+        this.remindNote = this.remindNote.bind(this);
     }
+
+// ... reszta komponentu Notes ...
+
+
+    createNotification(message){
+        NotificationManager.success('Success',message);
+    }
+    showDetailForm(id){
+        const{noteList}=this.state;
+        var index = noteList.findIndex(function(value){
+            return value.id===id;
+        });
+        confirmAlert({
+            customUI: ({onClose})=>{
+                return(
+                   <DetailForm noteList = {noteList} index={index} onClose={onClose} />
+                );
+            }
+        });
+    }
+
+    showEditForm(id){
+        const{noteList}=this.state;
+        var index = noteList.findIndex(function(value){
+            return value.id===id;
+        });
+        confirmAlert({
+            customUI: ({onClose})=>{
+                return(
+                    <div>
+                        <EditForm noteList = {noteList} index={index} onClose={onClose} editNote={this.editNote} />
+                        <NotificationContainer />
+                    </div>
+                );
+            }
+        });
+    }
+
+    showDeleteForm(id){
+        const{noteList}=this.state;
+        var index = noteList.findIndex(function(value){
+            return value.id===id;
+        });
+        confirmAlert({
+            customUI: ({onClose})=>{
+                return(
+                    <DeleteForm index={index} onClose={onClose} deleteNote={this.deleteNote} />
+                );
+            }
+        });
+    }
+    showChangeNoteStatusForm(id){
+
+
+        const{noteList}=this.state;
+        var index = noteList.findIndex(function(value){
+            return value.id===id;
+        });
+        confirmAlert({
+            customUI: ({onClose})=>{
+                return(
+                        <ChangeNoteStatusForm status = {noteList[index].status} index={index} onClose={onClose} changeNoteStatus={this.changeNoteStatus}  showChangeNoteStatusForm={() => {}} />
+                );
+            }
+        });
+
+    }
+
+    showRemindForm(id){
+        const{noteList}=this.state;
+        var index = noteList.findIndex(function(value){
+            return value.id===id;
+        });
+        confirmAlert({
+            customUI: ({onClose})=>{
+                return(
+                    <div>
+                        <RemindForm onClose={onClose} index={index}  remindNote={this.remindNote} />
+                        <NotificationContainer />
+                    </div>
+                );
+            }
+        });
+    }
+
     onChange(e){
         var name = e.target.id;
         this.setState({
@@ -67,40 +137,73 @@ class Notes extends Component{
             }
         });
     }
-    addNote(){
+    addNote(s){
         this.setState(state=>{
             var notes = state.noteList;
-            var date = state.date === undefined ? "": new Date(state.date);
-            var time = state.time === undefined ? "": state.time;
+            var id = state.noteList.length + 1;
+            var date = s.date === undefined ? "": s.date;
+            var time = s.time === undefined ? "": s.time;
+            var status ="";
             if(state.category ==="To do"){
-                notes.push({
-                    title: state.title,
-                    category: state.category,
-                    content: state.content,
-                    date: date,
-                    time: time,
-                    status: false
-                })
+                status = false;
             } else {
-                notes.push({
-                    title: state.title,
-                    category: state.category,
-                    content: state.content,
-                    date: date,
-                    time: time,
-                    status: undefined
-                })
+               status=undefined;
             }
+            let newNote = new NoteClass(id,s.title,s.category,s.content,status,date,time);
+            notes.push(newNote);
             return{noteList : notes}
-        })
+        });
     }
+
+    editNote(index,s){
+        this.setState(state=>{
+            var notes = state.noteList;
+
+            notes[index].title = s.editTitle;
+            notes[index].category = s.editCategory;
+            notes[index].content = s.editContent;
+
+            return{noteList : notes}
+        });
+        this.createNotification('Note was edited successfully');
+    }
+
+    deleteNote(index){
+        this.setState(state=>{
+            var notes = state.noteList;
+            notes.splice(index,1);
+            return{noteList : notes}
+        });
+    }
+
+    remindNote(index,date,time){
+        this.setState(state=>{
+            var notes = state.noteList;
+
+            notes[index].date = date;
+            notes[index].time = time;
+
+            return{noteList : notes}
+        });
+        this.createNotification('Notification was added succesfully');
+    }
+    changeNoteStatus(index){
+        this.setState(state=>{
+            var notes = state.noteList;
+            var prevStatus = notes[index].status;
+            notes[index].status=!prevStatus;
+            return{noteList : notes}
+        });
+    }
+
     filter(content) {
         return content.length > 25 ? content.substring(0,25) +"..." : content;
     }
     render() {
+        console.log(typeof this.showChangeNoteStatusForm);
         return (
             <div>
-                <h3>List of  notes</h3>;
+                <h3>List of  notes</h3>
                 <Table striped bordered>
                     <thead>
                     <tr>
@@ -109,57 +212,29 @@ class Notes extends Component{
                         <th>Content</th>
                         <th>Action</th>
                     </tr>
-                    <Note
-                        title="Go shopping"
-                        category="To do"
-                        content = "Buy some vegetables"
-                        date={new Date("2020-12-12")}
-                    />
+                    </thead>
+                    <tbody>
                     {this.state.noteList.map((note,key)=>{
                         return(
                             <Note
                                 key={key}
+                                id={note.id}
                                 title={note.title}
                                 category={note.category}
-                                content={this.filter(note.content)}
+                                content={note.content}
+                                date={note.date}
+                                time={note.time}
                                 status={note.status}
+                                showDetailForm={this.showDetailForm}
+                                showDeleteForm={this.showDeleteForm}
+                                showChangeNoteStatusForm={this.showChangeNoteStatusForm}
+                                showRemindForm={this.showRemindForm}
                             />
                         )
                     })}
-                    <Note />
-                    </thead>
-                    <tbody>
                     </tbody>
                 </Table>
-                <Table striped bordered>
-                    <tbody>
-                    <tr>
-                        <td colSpan="5" style={{textAlign: "center"}}><i><b>Add new note</b></i></td>
-                    </tr>
-                    <tr>
-                        <td><input type="text" placeholder="Title of note" id="title" onChange={(e)=> this.onChange(e)} /> </td>
-                        <td><input type="text" list="categoryList" id="category" placeholder="Category of note" onChange={(e)=> this.onChange(e)} />
-                        <datalist id="categoryList">
-                            <option>To do</option>
-                            <option>Hobby</option>
-                            <option>Work</option>
-                            <option>Study</option>
-                            <option>Gym</option>
-                            <option>Favorites</option>
-                        </datalist>
-                        </td>
-                        <td>
-                            {
-                                this.state.content!==''?
-                                    <Button variant="primary" onClick={()=>this.onClick()}>Edit content</Button>:
-                                    <Button variant="success" onClick={()=>this.onClick()}>Add content</Button>
-                            }
-                        </td>
-                        <td><input type="date" id="date" onChange={(e)=>this.onChange(e)} /><input type="time" id="time" onChange={(e)=>this.onChange(e)}/></td>
-                        <td><Button variant="secondary" onClick={()=>this.addNote()}>Add note</Button> </td>
-                    </tr>
-                    </tbody>
-                </Table>
+               <AddNote addNote={this.addNote}/>
             </div>
         );
     }
